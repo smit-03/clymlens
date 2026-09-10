@@ -52,13 +52,16 @@ describe("ClymLens end-to-end (mocked API)", () => {
     await waitFor(() => expect(api.storeWeatherData).toHaveBeenCalledTimes(1));
     expect(api.getWeatherFileContent).toHaveBeenCalledWith(STORED);
 
-    // Workspace now shows the selected dataset.
+    // Workspace now shows the selected dataset: header, summary stats, table.
     expect(await screen.findByRole("heading", { name: /19\.08°N/ })).toBeInTheDocument();
-    expect(await screen.findByText(/daily high/i)).toBeInTheDocument();
 
-    const table = screen.getByRole("table");
+    const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(1 + 3);
     expect(screen.getByText(/showing/i)).toHaveTextContent("Showing 1–3 of 3");
+    expect(screen.getByText(/warmest/i)).toBeInTheDocument();
+
+    // The chart chunk is lazy-loaded, so allow it extra time to appear.
+    expect(await screen.findByText(/daily high/i, undefined, { timeout: 8000 })).toBeInTheDocument();
   });
 
   it("surfaces a 404 when the selected dataset is gone", async () => {
