@@ -1,12 +1,76 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "../App";
 
-describe("App", () => {
-  it("renders the shell with the product name and workspace heading", () => {
+const api = vi.hoisted(() => ({
+  listWeatherFiles: vi.fn(),
+  storeWeatherData: vi.fn(),
+  getWeatherFileContent: vi.fn(),
+}));
+vi.mock("../api/weather", () => api);
+
+const STORED = "weather_19.0760_72.8777_2024-06-01_2024-06-05_20260101T000000Z.json";
+
+const ARCHIVE = {
+  latitude: 19.08,
+  longitude: 72.88,
+  timezone: "UTC",
+  daily_units: { temperature_2m_max: "°C" },
+  daily: {
+    time: ["2024-06-01", "2024-06-02", "2024-06-03"],
+    temperature_2m_max: [31, 33, 30],
+    temperature_2m_min: [26, 27, 25],
+    temperature_2m_mean: [28, 30, 27],
+    apparent_temperature_max: [35, 37, 34],
+    apparent_temperature_min: [27, 28, 26],
+  },
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  api.listWeatherFiles.mockResolvedValue({ files: [] });
+  api.storeWeatherData.mockResolvedValue({ status: "ok", file: STORED, cached: false });
+  api.getWeatherFileContent.mockResolvedValue(ARCHIVE);
+});
+
+describe("ClymLens end-to-end (mocked API)", () => {
+  it("fetches, stores, auto-selects and visualizes a dataset", async () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "ClymLens" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /weather workspace/i })).toBeInTheDocument();
+    expect(await screen.findByText(/nothing to inspect yet/i)).toBeInTheDocument();
+
+    // After storing, the list call should return the new file.
+    api.listWeatherFiles.mockResolvedValue({
+      files: [{ name: STORED, size: 4200, created_at: "2026-01-01T00:00:00Z" }],
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /fetch & store/i }));
+
+    await waitFor(() => expect(api.storeWeatherData).toHaveBeenCalledTimes(1));
+    expect(api.getWeatherFileContent).toHaveBeenCalledWith(STORED);
+
+    // Workspace now shows the selected dataset.
+    expect(await screen.findByRole("heading", { name: /19\.08°N/ })).toBeInTheDocument();
+    expect(await screen.findByText(/daily high/i)).toBeInTheDocument();
+
+    const table = screen.getByRole("table");
+    expect(within(table).getAllByRole("row")).toHaveLength(1 + 3);
+    expect(screen.getByText(/showing/i)).toHaveTextContent("Showing 1–3 of 3");
+  });
+
+  it("surfaces a 404 when the selected dataset is gone", async () => {
+    const { ApiError } = await import("../api/client");
+    api.listWeatherFiles.mockResolvedValue({
+      files: [{ name: STORED, size: 4200, created_at: "2026-01-01T00:00:00Z" }],
+    });
+    api.getWeatherFileContent.mockRejectedValue(new ApiError("not found", 404));
+
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /19\.08°N/ }));
+    expect(await screen.findByText(/dataset unavailable/i)).toBeInTheDocument();
   });
 });
