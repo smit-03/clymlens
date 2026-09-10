@@ -10,7 +10,14 @@ import re
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_serializer,
+    model_validator,
+)
 
 # "range <= 31 days" is read as at most 31 distinct calendar days inclusive,
 # i.e. end_date - start_date <= 30 days.
@@ -72,6 +79,10 @@ class FileInfo(BaseModel):
     name: str
     size: int
     created_at: datetime
+
+    @field_serializer("created_at")
+    def _serialize_created_at(self, value: datetime) -> str:
+        return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 class ListFilesResponse(BaseModel):
