@@ -6,9 +6,10 @@ clients easy to override in tests via ``app.dependency_overrides``.
 
 from __future__ import annotations
 
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from app.config import Settings, get_settings
+from app.rate_limit import FixedWindowRateLimiter, client_key
 from app.services.storage import S3Storage
 from app.services.weather import OpenMeteoClient
 
@@ -27,3 +28,9 @@ def get_storage(settings: Settings = Depends(get_settings)) -> S3Storage:
         region=settings.aws_region,
         dedup_ttl_minutes=settings.dedup_ttl_minutes,
     )
+
+
+async def enforce_rate_limit(request: Request) -> None:
+    """Per-client throttle for the fetch/store endpoint (limiter lives on app.state)."""
+    limiter: FixedWindowRateLimiter = request.app.state.rate_limiter
+    await limiter.check(client_key(request))

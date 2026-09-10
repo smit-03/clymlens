@@ -1,8 +1,4 @@
-"""FastAPI application factory.
-
-Milestone 1 wires the app shell, CORS, logging, and ``/health``. Validation,
-error handlers, and the weather endpoints arrive in later milestones.
-"""
+"""FastAPI application factory."""
 
 from __future__ import annotations
 
@@ -14,6 +10,8 @@ from app.api.routes import router
 from app.config import get_settings
 from app.exception_handlers import register_exception_handlers
 from app.logging_config import configure_logging
+from app.middleware import register_middleware
+from app.rate_limit import FixedWindowRateLimiter
 
 
 def create_app() -> FastAPI:
@@ -25,6 +23,7 @@ def create_app() -> FastAPI:
         version=__version__,
         description="Historical weather explorer — fetch, store, list, and serve daily weather.",
     )
+    app.state.rate_limiter = FixedWindowRateLimiter(settings.rate_limit_per_minute)
 
     cors_kwargs: dict[str, object] = {
         "allow_origins": settings.cors_origin_list,
@@ -36,6 +35,7 @@ def create_app() -> FastAPI:
         cors_kwargs["allow_origin_regex"] = settings.cors_origin_regex
     app.add_middleware(CORSMiddleware, **cors_kwargs)
 
+    register_middleware(app)
     register_exception_handlers(app)
     app.include_router(router)
     return app
