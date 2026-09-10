@@ -3,6 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 Description: ClymLens weather explorer API - FastAPI on Lambda with a Function URL.
 
 Parameters:
+  WeatherBucketName:
+    Type: String
+    Description: >-
+      Name of an existing, private S3 bucket for the stored weather JSON. The bucket
+      is managed outside this stack so that `sam delete` never removes stored data.
+    Default: clymlens-weather-data-20260910
   CorsOrigins:
     Type: String
     Description: Comma-separated allowed browser origins (the deployed frontend URL).
@@ -33,25 +39,6 @@ Globals:
     Timeout: 15
 
 Resources:
-  WeatherBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      LifecycleConfiguration:
-        Rules:
-          - Id: expire-weather-data
-            Status: Enabled
-            Prefix: weather-data/
-            ExpirationInDays: 90
-
   ApiLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -68,7 +55,7 @@ Resources:
       Environment:
         Variables:
           ENV: production
-          S3_BUCKET: !Ref WeatherBucket
+          S3_BUCKET: !Ref WeatherBucketName
           S3_PREFIX: weather-data/
           OPEN_METEO_BASE_URL: !Ref OpenMeteoBaseUrl
           DEDUP_TTL_MINUTES: !Ref DedupTtlMinutes
@@ -78,6 +65,8 @@ Resources:
           LOG_LEVEL: !Ref LogLevel
       FunctionUrlConfig:
         AuthType: NONE
+      # Least-privilege: read/write objects only under weather-data/, and list only
+      # that prefix. Mirrors the standalone ClymLensWeatherS3Access policy.
       Policies:
         - Statement:
             - Sid: ReadWriteWeatherObjects
@@ -85,11 +74,11 @@ Resources:
               Action:
                 - s3:GetObject
                 - s3:PutObject
-              Resource: !Sub "${WeatherBucket.Arn}/weather-data/*"
+              Resource: !Sub "arn:aws:s3:::${WeatherBucketName}/weather-data/*"
             - Sid: ListWeatherPrefix
               Effect: Allow
               Action: s3:ListBucket
-              Resource: !GetAtt WeatherBucket.Arn
+              Resource: !Sub "arn:aws:s3:::${WeatherBucketName}"
               Condition:
                 StringLike:
                   s3:prefix: weather-data/*
@@ -99,5 +88,5 @@ Outputs:
     Description: Base URL of the API (set this as VITE_API_BASE_URL, no trailing slash).
     Value: !GetAtt ApiFunctionUrl.FunctionUrl
   BucketName:
-    Description: S3 bucket holding the stored weather JSON.
-    Value: !Ref WeatherBucket
+    Description: S3 bucket the API reads and writes.
+    Value: !Ref WeatherBucketName
