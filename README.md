@@ -18,8 +18,14 @@ Built for the InRisk Labs full-stack case study.
 
 | | URL | Last verified live |
 |---|---|---|
-| Dashboard | _added during deployment_ | _pending_ |
-| API health | _added during deployment_ | _pending_ |
+| Dashboard | _Vercel deploy pending_ | — |
+| API | `https://vnhkz43xkc4t6mefvzrnbhfyvi0qmwyd.lambda-url.ap-south-1.on.aws` | 2026-09-11 |
+
+Health check: `curl https://vnhkz43xkc4t6mefvzrnbhfyvi0qmwyd.lambda-url.ap-south-1.on.aws/health`
+
+The backend runs on AWS Lambda (region `ap-south-1`) behind a Lambda Function URL. It reads
+and writes S3 **using its IAM execution role — no access keys anywhere**. If the API is cold
+the first request takes ~2–3 s.
 
 > Deployment steps and redeploy instructions: [`backend/DEPLOY.md`](backend/DEPLOY.md).
 
