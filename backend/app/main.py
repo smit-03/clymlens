@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.api.routes import router
 from app.config import get_settings
+from app.exception_handlers import register_exception_handlers
 from app.logging_config import configure_logging
 
 
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
         cors_kwargs["allow_origin_regex"] = settings.cors_origin_regex
     app.add_middleware(CORSMiddleware, **cors_kwargs)
 
+    register_exception_handlers(app)
     app.include_router(router)
     return app
 
