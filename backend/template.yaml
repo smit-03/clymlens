@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: ClymLens weather explorer API - FastAPI on Lambda with a Function URL.
+
+Parameters:
+  CorsOrigins:
+    Type: String
+    Description: Comma-separated allowed browser origins (the deployed frontend URL).
+    Default: http://localhost:5173
+  CorsOriginRegex:
+    Type: String
+    Description: Optional regex for preview origins (e.g. Vercel preview URLs). Empty to disable.
+    Default: ""
+  OpenMeteoBaseUrl:
+    Type: String
+    Default: https://archive-api.open-meteo.com/v1/archive
+  DedupTtlMinutes:
+    Type: Number
+    Default: 360
+  RateLimitPerMinute:
+    Type: Number
+    Default: 20
+  LogLevel:
+    Type: String
+    Default: INFO
+    AllowedValues: [DEBUG, INFO, WARNING, ERROR]
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Architectures: [x86_64]
+    MemorySize: 512
+    Timeout: 15
+
+Resources:
+  WeatherBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-weather-data
+            Status: Enabled
+            Prefix: weather-data/
+            ExpirationInDays: 90
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/clymlens-api-${AWS::StackName}"
+      RetentionInDays: 14
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    DependsOn: ApiLogGroup
+    Properties:
+      FunctionName: !Sub "clymlens-api-${AWS::StackName}"
+      CodeUri: ./
+      Handler: app.lambda_handler.handler
+      Environment:
+        Variables:
+          ENV: production
+          S3_BUCKET: !Ref WeatherBucket
+          S3_PREFIX: weather-data/
+          OPEN_METEO_BASE_URL: !Ref OpenMeteoBaseUrl
+          DEDUP_TTL_MINUTES: !Ref DedupTtlMinutes
+          RATE_LIMIT_PER_MINUTE: !Ref RateLimitPerMinute
+          CORS_ORIGINS: !Ref CorsOrigins
+          CORS_ORIGIN_REGEX: !Ref CorsOriginRegex
+          LOG_LEVEL: !Ref LogLevel
+      FunctionUrlConfig:
+        AuthType: NONE
+      Policies:
+        - Statement:
+            - Sid: ReadWriteWeatherObjects
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub "${WeatherBucket.Arn}/weather-data/*"
+            - Sid: ListWeatherPrefix
+              Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt WeatherBucket.Arn
+              Condition:
+                StringLike:
+                  s3:prefix: weather-data/*
+
+Outputs:
+  FunctionUrl:
+    Description: Base URL of the API (set this as VITE_API_BASE_URL, no trailing slash).
+    Value: !GetAtt ApiFunctionUrl.FunctionUrl
+  BucketName:
+    Description: S3 bucket holding the stored weather JSON.
+    Value: !Ref WeatherBucket

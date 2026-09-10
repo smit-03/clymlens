@@ -1,0 +1,20 @@
+# Sample SAM config. `sam deploy --guided` will create/overwrite the real values
+# on first run. Committed so the deploy is reproducible.
+version = 0.1
+
+[default.global.parameters]
+stack_name = "clymlens"
+
+[default.build.parameters]
+# Build inside a Lambda-like container so Linux wheels are produced from any host.
+use_container = true
+
+[default.deploy.parameters]
+region = "ap-south-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = "CorsOrigins=\"http://localhost:5173\" CorsOriginRegex=\"\""
+
+[default.sync.parameters]
+watch = false

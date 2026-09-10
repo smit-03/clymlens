@@ -1,0 +1,16 @@
+.venv
+venv
+tests
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__
+htmlcov
+.coverage
+.aws-sam
+*.md
+.env
+.env.*
+samconfig.toml
+pyproject.toml
+requirements-dev.txt
