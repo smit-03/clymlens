@@ -228,52 +228,54 @@ apparent_temperature_max, apparent_temperature_min, temperature_2m_mean}`.
 
 - Python 3.12+ and `pip`
 - Node.js 22+ and `npm`
-- One of: a real AWS account **or** nothing extra (a local S3 fake is included)
+- Nothing else — a local S3 fake (`moto`) is included; no AWS account needed to run it
 
-### 1. Backend
+### One-time setup
 
 ```bash
 cd backend
 python -m venv .venv
-.venv/Scripts/activate          # Windows
-# source .venv/bin/activate     # macOS / Linux
+.venv/Scripts/activate          # Windows  (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements-dev.txt
 cp .env.example .env
-```
 
-**Option A — local S3 (no AWS account).** In one terminal:
-
-```bash
-cd backend && .venv/Scripts/python -m moto.server -p 5000
-```
-
-Keep `.env` as copied (`S3_ENDPOINT_URL=http://localhost:5000`, dummy credentials). The dev
-bucket is created automatically on startup. In another terminal:
-
-```bash
-cd backend && uvicorn app.main:app --reload --port 8000
-```
-
-**Option B — real AWS S3.** Point `.env` at a private bucket in `ap-south-1`
-(`S3_BUCKET=clymlens-weather-data-20260910`), **clear** `S3_ENDPOINT_URL` and the dummy
-`AWS_*` keys, and provide credentials for an IAM identity that can `ListBucket` /
-`GetObject` / `PutObject` on it (e.g. via `aws configure` or `AWS_*` env vars). Start
-`uvicorn` as above.
-
-Check it: `curl http://localhost:8000/health`
-
-### 2. Frontend
-
-```bash
-cd frontend
+cd ../frontend
 npm install
 echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
-npm run dev            # http://localhost:5173
 ```
 
-Open http://localhost:5173, fill the form (it is pre-filled with a valid Mumbai query),
-click **Fetch & store**, and the new dataset is fetched from the live Open-Meteo API, stored,
-and selected for inspection.
+### Run everything (moto S3 + FastAPI + Vite, with hot reload)
+
+```bash
+bash scripts/dev.sh
+```
+
+Then open **http://localhost:5173**. Editing frontend files reloads the browser instantly;
+editing backend files restarts the API. `Ctrl-C` stops all three. Stored datasets live in
+`moto`'s memory and reset when you restart.
+
+<details>
+<summary>Or start the three processes yourself</summary>
+
+```bash
+# terminal 1 — fake S3
+cd backend && .venv/Scripts/python -m moto.server -p 5000
+# terminal 2 — API (bucket auto-created on startup)
+cd backend && uvicorn app.main:app --reload --port 8000
+# terminal 3 — dashboard
+cd frontend && npm run dev
+```
+</details>
+
+### Backend against real AWS S3 instead of the fake
+
+Point `.env` at a private bucket in `ap-south-1` (`S3_BUCKET=clymlens-weather-data-20260910`),
+**clear** `S3_ENDPOINT_URL` and the dummy `AWS_*` keys, and provide credentials for an IAM
+identity allowed to `ListBucket` / `GetObject` / `PutObject` on it (`aws configure` or `AWS_*`
+env vars). Then run `uvicorn` as above.
+
+The form is pre-filled with a valid Mumbai query — click **Fetch & store** and the dataset
+is fetched from the live Open-Meteo API, stored, and selected for inspection.
 
 ---
 
