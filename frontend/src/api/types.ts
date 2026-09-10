@@ -31,10 +31,14 @@ export interface ErrorResponse {
   message: string;
 }
 
-/** Raw Open-Meteo archive payload — only the fields the UI relies on are typed. */
+/**
+ * Raw Open-Meteo archive payload — only the fields the UI relies on are typed.
+ * Everything is optional: the UI must render sensibly even if the stored file
+ * is partial or unexpected.
+ */
 export interface OpenMeteoArchive {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   timezone?: string;
   elevation?: number;
   daily_units?: Record<string, string>;
