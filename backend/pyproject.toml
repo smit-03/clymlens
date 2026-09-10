@@ -1,0 +1,30 @@
+# Tooling configuration only. Runtime deps live in requirements*.txt.
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
+ignore = ["B008"]  # FastAPI uses function calls (Depends(...)) in argument defaults
+
+[tool.ruff.lint.per-file-ignores]
+# conftest sets test env vars that must be in place before app modules import.
+"tests/conftest.py" = ["E402", "I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "error",
+    # Starlette 1.x warns that TestClient will require httpx2 in a future release.
+    # Not actionable yet; the sync httpx path still works.
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]

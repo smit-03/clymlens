@@ -1,0 +1,39 @@
+# ---- Internal / confidential (not for public repo) ----
+docs/Case Study - Full Stack Engineer.pdf
+docs/claude_case_study_master_prompt.md
+docs/DESIGN.md
+
+# ---- Python / backend ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# ---- Node / frontend ----
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# ---- Env & secrets ----
+.env
+.env.*
+!.env.example
+*.local
+
+# ---- AWS SAM ----
+.aws-sam/
+samconfig.local.toml
+
+# ---- Editors / OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
