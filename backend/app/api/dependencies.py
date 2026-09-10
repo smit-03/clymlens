@@ -27,6 +27,7 @@ def get_storage(settings: Settings = Depends(get_settings)) -> S3Storage:
         prefix=settings.s3_prefix,
         region=settings.aws_region,
         dedup_ttl_minutes=settings.dedup_ttl_minutes,
+        endpoint_url=settings.s3_endpoint_url,
     )
 
 

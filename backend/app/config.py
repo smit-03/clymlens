@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     aws_region: str = "ap-south-1"
     s3_bucket: str = Field(default="", description="Target S3 bucket name")
     s3_prefix: str = "weather-data/"
+    # Point at a local S3 (moto / LocalStack / MinIO) for development. Empty = real AWS.
+    s3_endpoint_url: str = ""
 
     # --- Open-Meteo ---
     open_meteo_base_url: str = "https://archive-api.open-meteo.com/v1/archive"

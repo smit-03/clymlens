@@ -31,11 +31,38 @@ class S3Storage:
         region: str,
         dedup_ttl_minutes: int,
         client=None,
+        endpoint_url: str = "",
     ):
         self._bucket = bucket
         self._prefix = prefix
         self._dedup_ttl = timedelta(minutes=dedup_ttl_minutes)
-        self._client = client or boto3.client("s3", region_name=region)
+        if client is not None:
+            self._client = client
+        elif endpoint_url:
+            # Local S3 fake (moto / LocalStack): use dummy credentials so boto3 does
+            # not fail looking for a real AWS identity.
+            self._client = boto3.client(
+                "s3",
+                region_name=region,
+                endpoint_url=endpoint_url,
+                aws_access_key_id="local",
+                aws_secret_access_key="local",
+            )
+        else:
+            self._client = boto3.client("s3", region_name=region)
+        self._region = region
+
+    async def ensure_bucket(self) -> None:
+        """Create the bucket if it is missing. Intended for local S3 only."""
+        try:
+            await run_in_threadpool(self._client.head_bucket, Bucket=self._bucket)
+            return
+        except (ClientError, BotoCoreError):
+            pass
+        kwargs: dict = {"Bucket": self._bucket}
+        if self._region and self._region != "us-east-1":
+            kwargs["CreateBucketConfiguration"] = {"LocationConstraint": self._region}
+        await run_in_threadpool(lambda: self._client.create_bucket(**kwargs))
 
     # --- key helpers ---------------------------------------------------------
 
