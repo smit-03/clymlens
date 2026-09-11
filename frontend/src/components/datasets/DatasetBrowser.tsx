@@ -8,7 +8,7 @@ import { cx } from "../../lib/cx";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
-import { Panel, PanelHeader } from "../ui/Panel";
+import { PanelHeader } from "../ui/Panel";
 import { Skeleton } from "../ui/Skeleton";
 import { ChevronRightIcon, LayersIcon, RefreshIcon } from "../ui/icons";
 
@@ -76,7 +76,7 @@ export function DatasetBrowser() {
   const isError = filesStatus === "error" && files.length === 0;
 
   return (
-    <Panel aria-label="Stored datasets">
+    <section aria-label="Stored datasets">
       <PanelHeader
         title="Datasets"
         description={countLabel}
@@ -137,6 +137,6 @@ export function DatasetBrowser() {
           />
         ))}
       </div>
-    </Panel>
+    </section>
   );
 }

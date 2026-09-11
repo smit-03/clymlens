@@ -52,7 +52,9 @@ describe("ClymLens end-to-end (mocked API)", () => {
       files: [{ name: STORED, size: 4200, created_at: "2026-01-01T00:00:00Z" }],
     });
 
-    await userEvent.click(screen.getByRole("button", { name: /fetch & store/i }));
+    // Two "Fetch & store" buttons exist (main panel + sidebar quick-fetch); use the main one.
+    const mainPanel = screen.getByRole("region", { name: /fetch weather data/i });
+    await userEvent.click(within(mainPanel).getByRole("button", { name: /fetch & store/i }));
 
     await waitFor(() => expect(api.storeWeatherData).toHaveBeenCalledTimes(1));
     expect(api.getWeatherFileContent).toHaveBeenCalledWith(STORED);

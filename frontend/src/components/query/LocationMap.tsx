@@ -7,6 +7,9 @@ interface LocationMapProps {
   longitude: number | null;
   onChange: (latitude: number, longitude: number) => void;
   disabled?: boolean;
+  /** Overrides the default height/rounding — pass a Tailwind height class, e.g. "h-full". */
+  className?: string;
+  zoomControl?: boolean;
 }
 
 const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
@@ -21,7 +24,14 @@ const PIN = L.divIcon({
   iconAnchor: [14, 26],
 });
 
-export function LocationMap({ latitude, longitude, onChange, disabled }: LocationMapProps) {
+export function LocationMap({
+  latitude,
+  longitude,
+  onChange,
+  disabled,
+  className,
+  zoomControl = true,
+}: LocationMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -35,8 +45,13 @@ export function LocationMap({ latitude, longitude, onChange, disabled }: Locatio
     const map = L.map(containerRef.current, {
       center: [latitude ?? 20, longitude ?? 0],
       zoom: latitude != null ? 6 : 2,
-      zoomControl: true,
+      zoomControl,
       attributionControl: true,
+      // Leaflet fades new tiles in from opacity 0. That fade can get interrupted
+      // by a resize happening at the same time (e.g. the sidebar collapse/expand
+      // transition), leaving fully-loaded tiles stuck invisible. Skipping the
+      // animation avoids the failure mode entirely — tiles just appear.
+      fadeAnimation: false,
     });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
@@ -52,10 +67,26 @@ export function LocationMap({ latitude, longitude, onChange, disabled }: Locatio
     });
 
     mapRef.current = map;
+
     // Container may have been laid out after mount.
     setTimeout(() => map.invalidateSize(), 0);
 
+    // The container can keep changing size after mount — e.g. the sidebar's
+    // collapse/expand transition, or a window resize. Calling invalidateSize()
+    // on every intermediate frame of that transition confuses Leaflet's tile
+    // loading (it ends up covering only the size some mid-transition frame
+    // had, leaving the rest blank once the animation settles). Debounce so it
+    // only runs once, against the final, settled size.
+    let settleTimer: ReturnType<typeof setTimeout>;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => map.invalidateSize(), 150);
+    });
+    resizeObserver.observe(containerRef.current);
+
     return () => {
+      clearTimeout(settleTimer);
+      resizeObserver.disconnect();
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
@@ -88,7 +119,7 @@ export function LocationMap({ latitude, longitude, onChange, disabled }: Locatio
       ref={containerRef}
       role="application"
       aria-label="Map — click to set coordinates"
-      className="h-52 w-full overflow-hidden rounded-lg border border-slate-200"
+      className={className ?? "h-52 w-full overflow-hidden rounded-lg border border-slate-200"}
     />
   );
 }

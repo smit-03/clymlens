@@ -67,7 +67,7 @@ export function DatasetWorkspace() {
           title={files.length === 0 ? "Nothing to inspect yet" : "Select a dataset"}
           description={
             files.length === 0
-              ? "Use the form to fetch historical weather. Stored datasets show up in the list, ready to inspect."
+              ? "Fetch a location and date range above — it'll show up in the list, ready to inspect."
               : "Choose a dataset from the list to see its temperature trend and daily observations."
           }
         />

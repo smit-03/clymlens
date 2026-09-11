@@ -108,3 +108,17 @@ export const SearchIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="m20 20-3.5-3.5" />
   </Base>
 );
+
+export const ExpandIcon = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <path d="M9 4H4v5M4 4l6 6M15 20h5v-5M20 20l-6-6" />
+  </Base>
+);
+
+export const CrosshairIcon = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+  </Base>
+);

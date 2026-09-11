@@ -35,6 +35,9 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Reserve the scrollbar's width up front so content revealing/hiding never
+     shifts the page horizontally when a scrollbar appears or disappears. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -68,5 +71,25 @@ body {
   }
   50% {
     opacity: 0.45;
+  }
+}
+
+@keyframes clymlens-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes clymlens-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

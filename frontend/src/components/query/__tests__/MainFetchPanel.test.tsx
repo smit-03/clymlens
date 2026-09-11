@@ -2,23 +2,30 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { QueryDraftProvider } from "../../../context/QueryDraftContext";
+import { SidebarUIProvider } from "../../../context/SidebarUIContext";
+import { ToastProvider } from "../../../context/ToastContext";
 import { WorkspaceProvider } from "../../../context/WorkspaceContext";
-import { QueryForm } from "../QueryForm";
+import { MainFetchPanel } from "../MainFetchPanel";
 
 const api = vi.hoisted(() => ({
   listWeatherFiles: vi.fn(),
   storeWeatherData: vi.fn(),
   getWeatherFileContent: vi.fn(),
 }));
-
 vi.mock("../../../api/weather", () => api);
-vi.mock("../LocationMap", () => ({ LocationMap: () => <div data-testid="location-map" /> }));
 
 function setup() {
   return render(
-    <WorkspaceProvider>
-      <QueryForm />
-    </WorkspaceProvider>,
+    <ToastProvider>
+      <QueryDraftProvider>
+        <WorkspaceProvider>
+          <SidebarUIProvider>
+            <MainFetchPanel />
+          </SidebarUIProvider>
+        </WorkspaceProvider>
+      </QueryDraftProvider>
+    </ToastProvider>,
   );
 }
 
@@ -33,20 +40,28 @@ beforeEach(() => {
   });
 });
 
-describe("QueryForm", () => {
-  it("submits the parsed query and shows a success message", async () => {
+describe("MainFetchPanel", () => {
+  it("hides coordinate fields until the disclosure is opened", async () => {
+    setup();
+    expect(screen.queryByLabelText(/^latitude$/i)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /enter coordinates manually/i }));
+    expect(screen.getByLabelText(/^latitude$/i)).toBeInTheDocument();
+  });
+
+  it("submits the default (valid) draft and reports success via a toast", async () => {
     setup();
     await userEvent.click(screen.getByRole("button", { name: /fetch & store/i }));
 
     await waitFor(() => expect(api.storeWeatherData).toHaveBeenCalledTimes(1));
-    const body = api.storeWeatherData.mock.calls[0][0];
-    expect(body).toMatchObject({ latitude: 19.076, longitude: 72.8777 });
+    expect(api.storeWeatherData.mock.calls[0][0]).toMatchObject({ latitude: 19.076, longitude: 72.8777 });
     expect(await screen.findByText(/stored ·/i)).toBeInTheDocument();
   });
 
-  it("blocks submission and shows a field error for a bad latitude", async () => {
+  it("reveals coordinates and blocks submission on an invalid latitude", async () => {
     setup();
-    const lat = screen.getByLabelText(/latitude/i);
+    await userEvent.click(screen.getByRole("button", { name: /enter coordinates manually/i }));
+    const lat = screen.getByLabelText(/^latitude$/i);
     await userEvent.clear(lat);
     await userEvent.type(lat, "999");
     await userEvent.click(screen.getByRole("button", { name: /fetch & store/i }));
