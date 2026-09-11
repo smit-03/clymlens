@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../api/weather", () => api);
+vi.mock("../LocationMap", () => ({ LocationMap: () => <div data-testid="location-map" /> }));
 
 function setup() {
   return render(

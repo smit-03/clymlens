@@ -7,10 +7,12 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id
   hint?: string;
   error?: string;
   trailing?: ReactNode;
+  /** Keep the label for screen readers but hide it visually. */
+  hideLabel?: boolean;
 }
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, hint, error, trailing, className, ...rest },
+  { label, hint, error, trailing, hideLabel, className, ...rest },
   ref,
 ) {
   const id = useId();
@@ -18,10 +20,15 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-[13px] font-medium text-slate-700">
+      <label
+        htmlFor={id}
+        className={cx(
+          hideLabel ? "sr-only" : "block text-[13px] font-medium text-slate-700",
+        )}
+      >
         {label}
       </label>
-      <div className="relative mt-1.5">
+      <div className={cx("relative", !hideLabel && "mt-1.5")}>
         <input
           ref={ref}
           id={id}

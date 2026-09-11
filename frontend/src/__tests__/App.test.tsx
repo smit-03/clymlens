@@ -11,6 +11,11 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock("../api/weather", () => api);
 
+// Leaflet needs a real layout engine; stub the map in tests.
+vi.mock("../components/query/LocationMap", () => ({
+  LocationMap: () => <div data-testid="location-map" />,
+}));
+
 const STORED = "weather_19.0760_72.8777_2024-06-01_2024-06-05_20260101T000000Z.json";
 
 const ARCHIVE = {
@@ -58,7 +63,7 @@ describe("ClymLens end-to-end (mocked API)", () => {
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(1 + 3);
     expect(screen.getByText(/showing/i)).toHaveTextContent("Showing 1–3 of 3");
-    expect(screen.getByText(/warmest/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/warmest/i).length).toBeGreaterThan(0);
 
     // The chart chunk is lazy-loaded, so allow it extra time to appear.
     expect(await screen.findByText(/daily high/i, undefined, { timeout: 8000 })).toBeInTheDocument();
