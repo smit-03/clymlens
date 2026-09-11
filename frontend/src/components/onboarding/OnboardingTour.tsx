@@ -50,6 +50,11 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
   const popoverRef = useRef<HTMLElement>(null);
   const step = STEPS[stepIndex];
   const StepIcon = step.icon;
+  // The chart/table panel can be taller than the viewport once a dataset is
+  // loaded, so it's left un-highlighted and the popover is centered instead
+  // of anchored to it — anchoring or elevating it re-creates the stacking
+  // bug where the panel painted over the popover (see .clymlens-tour-target).
+  const isCentered = step.target === "chart-table";
 
   const finish = useCallback(() => {
     completeOnboarding();
@@ -64,6 +69,10 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
   useEffect(() => {
     if (!open) return;
     if (step.target === "stored-datasets") setCollapsed(false);
+    if (isCentered) {
+      nextButtonRef.current?.focus();
+      return;
+    }
     const target = document.querySelector<HTMLElement>(`[data-tour-target="${step.target}"]`);
     if (target) {
       target.scrollIntoView?.({ behavior: "smooth", block: "center" });
@@ -91,7 +100,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
       };
     }
     nextButtonRef.current?.focus();
-  }, [open, setCollapsed, step.target]);
+  }, [open, setCollapsed, step.target, isCentered]);
 
   useEffect(() => {
     if (!open) return;
@@ -119,7 +128,11 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
         aria-labelledby="onboarding-tour-title"
         aria-describedby="onboarding-tour-description"
         className={`absolute left-4 right-4 z-[1002] mx-auto max-w-md overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_18px_50px_-20px_rgba(15,23,42,0.45)] ${
-          popoverPosition === "top" ? "top-4 sm:top-8" : "bottom-4 sm:bottom-8"
+          isCentered
+            ? "top-1/2 -translate-y-1/2"
+            : popoverPosition === "top"
+              ? "top-4 sm:top-8"
+              : "bottom-4 sm:bottom-8"
         }`}
       >
         <div className="h-1 bg-brand-500" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
