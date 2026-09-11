@@ -76,7 +76,7 @@ export function DatasetBrowser() {
   const isError = filesStatus === "error" && files.length === 0;
 
   return (
-    <Panel aria-label="Stored datasets" className="flex min-h-0 flex-col">
+    <Panel aria-label="Stored datasets">
       <PanelHeader
         title="Datasets"
         description={countLabel}
@@ -95,7 +95,7 @@ export function DatasetBrowser() {
         }
       />
 
-      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto lg:max-h-[calc(100vh-22rem)]">
+      <div className="divide-y divide-slate-100">
         {isInitialLoading &&
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2 px-4 py-3.5 sm:px-5">
