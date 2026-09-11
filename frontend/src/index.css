@@ -42,10 +42,12 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans);
   color: var(--color-slate-800);
-  background-color: var(--color-slate-50);
+  background-color: #f6f8fb;
+  /* Quiet atmosphere: a cool sky wash up top, a faint warm horizon low-right. */
   background-image:
-    radial-gradient(60rem 32rem at 78% -8%, rgba(53, 103, 239, 0.09), transparent 60%),
-    radial-gradient(46rem 30rem at -6% 4%, rgba(75, 149, 96, 0.08), transparent 55%);
+    linear-gradient(180deg, #eef3fb 0%, rgba(238, 243, 251, 0) 34vh),
+    radial-gradient(52rem 30rem at 92% 2%, rgba(53, 103, 239, 0.07), transparent 62%),
+    radial-gradient(44rem 26rem at 6% 0%, rgba(75, 149, 96, 0.06), transparent 60%);
   background-attachment: fixed;
   background-repeat: no-repeat;
   -webkit-font-smoothing: antialiased;

@@ -1,26 +1,65 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { DailyRow } from "../../lib/weatherData";
-import { formatTemp, shortDate, weekday } from "../../lib/format";
 import { cx } from "../../lib/cx";
+import { formatTemp, shortDate, weekday } from "../../lib/format";
+import { summarize } from "../../lib/stats";
+import type { DailyRow } from "../../lib/weatherData";
 import { Button } from "../ui/Button";
+import { Tooltip } from "../ui/Tooltip";
 import { ChevronLeftIcon, ChevronRightIcon } from "../ui/icons";
 
 const PAGE_SIZES = [10, 20, 50] as const;
+const WEEKEND = new Set([0, 6]);
 
-const COLUMNS: { key: keyof DailyRow; label: string; numeric: true }[] = [
-  { key: "tMax", label: "High", numeric: true },
-  { key: "tMin", label: "Low", numeric: true },
-  { key: "appMax", label: "Feels high", numeric: true },
-  { key: "appMin", label: "Feels low", numeric: true },
-  { key: "tMean", label: "Mean", numeric: true },
-];
+function isWeekend(iso: string): boolean {
+  const day = new Date(`${iso}T00:00:00Z`).getUTCDay();
+  return WEEKEND.has(day);
+}
+
+function TempCell({
+  value,
+  unit,
+  tone,
+  extreme,
+}: {
+  value: number | null;
+  unit: string;
+  tone: "max" | "min" | "muted";
+  extreme?: string;
+}) {
+  const text = formatTemp(value, "");
+  const color = value === null ? "text-slate-300" : tone === "muted" ? "text-slate-400" : "text-slate-800";
+
+  if (extreme && value !== null) {
+    const chip =
+      tone === "max"
+        ? "bg-temp-max/10 text-temp-max ring-temp-max/25"
+        : "bg-temp-min/10 text-temp-min ring-temp-min/25";
+    return (
+      <Tooltip label={`${extreme} · ${formatTemp(value, unit)}`}>
+        <span
+          className={cx(
+            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-sm font-semibold tabular-nums ring-1 ring-inset",
+            chip,
+          )}
+        >
+          {tone === "max" ? "▲" : "▼"} {text}
+        </span>
+      </Tooltip>
+    );
+  }
+  return <span className={cx("tabular-nums", color)}>{text}</span>;
+}
 
 export function ObservationsTable({ rows, unit }: { rows: DailyRow[]; unit: string }) {
   const [pageSize, setPageSize] = useState<number>(10);
   const [page, setPage] = useState(1);
 
   useEffect(() => setPage(1), [rows, pageSize]);
+
+  const summary = useMemo(() => summarize(rows), [rows]);
+  const warmestDate = rows.length > 1 ? summary.warmest?.date : undefined;
+  const coolestDate = rows.length > 1 ? summary.coolest?.date : undefined;
 
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const current = Math.min(page, pageCount);
@@ -36,7 +75,14 @@ export function ObservationsTable({ rows, unit }: { rows: DailyRow[]; unit: stri
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-1 sm:px-5">
-        <h3 className="text-[13px] font-semibold text-slate-800">Daily observations</h3>
+        <div>
+          <h3 className="text-[13px] font-semibold text-slate-800">Daily observations</h3>
+          {(warmestDate || coolestDate) && (
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              Extremes for the range are marked ▲ / ▼.
+            </p>
+          )}
+        </div>
         <label className="flex items-center gap-2 text-xs text-slate-500">
           Rows
           <select
@@ -53,40 +99,69 @@ export function ObservationsTable({ rows, unit }: { rows: DailyRow[]; unit: stri
         </label>
       </div>
 
-      <div className="overflow-x-auto border-y border-slate-100">
-        <table className="w-full min-w-[520px] text-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] border-collapse text-sm">
           <caption className="sr-only">Daily weather observations for the selected dataset</caption>
           <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wide text-slate-500">
-              <th scope="col" className="px-4 py-2.5 text-left font-medium sm:px-5">
+            <tr className="border-y border-slate-200 text-[10px] uppercase tracking-[0.08em] text-slate-400">
+              <th scope="col" className="py-2.5 pl-4 pr-3 text-left font-semibold sm:pl-5">
                 Date
               </th>
-              {COLUMNS.map((col) => (
-                <th key={col.key} scope="col" className="px-4 py-2.5 text-right font-medium">
-                  {col.label}
-                  <span className="ml-1 font-normal normal-case text-slate-400">{unit}</span>
-                </th>
-              ))}
+              <th scope="col" className="px-3 py-2.5 text-right font-semibold text-slate-500">
+                High <span className="font-normal normal-case text-slate-300">{unit}</span>
+              </th>
+              <th scope="col" className="px-3 py-2.5 text-right font-semibold text-slate-500">
+                Low <span className="font-normal normal-case text-slate-300">{unit}</span>
+              </th>
+              <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                Feels high <span className="text-slate-300">{unit}</span>
+              </th>
+              <th scope="col" className="px-3 py-2.5 text-right font-medium">
+                Feels low <span className="text-slate-300">{unit}</span>
+              </th>
+              <th scope="col" className="py-2.5 pl-3 pr-4 text-right font-medium sm:pr-5">
+                Mean <span className="text-slate-300">{unit}</span>
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody>
             {visible.map((row) => (
-              <tr key={row.date} className="transition-colors hover:bg-slate-50/70">
-                <th scope="row" className="whitespace-nowrap px-4 py-2.5 text-left font-normal sm:px-5">
-                  <span className="text-slate-800">{shortDate(row.date)}</span>
+              <tr
+                key={row.date}
+                className={cx(
+                  "border-b border-slate-100 transition-colors hover:bg-slate-50/80",
+                  isWeekend(row.date) && "bg-slate-50/50",
+                )}
+              >
+                <th scope="row" className="whitespace-nowrap py-2.5 pl-4 pr-3 text-left font-normal sm:pl-5">
+                  <span className="font-medium text-slate-800">{shortDate(row.date)}</span>
                   <span className="ml-1.5 text-xs text-slate-400">{weekday(row.date)}</span>
                 </th>
-                {COLUMNS.map((col) => (
-                  <td
-                    key={col.key}
-                    className={cx(
-                      "px-4 py-2.5 text-right tabular-nums",
-                      row[col.key] === null ? "text-slate-300" : "text-slate-700",
-                    )}
-                  >
-                    {formatTemp(row[col.key] as number | null, "")}
-                  </td>
-                ))}
+                <td className="px-3 py-2.5 text-right">
+                  <TempCell
+                    value={row.tMax}
+                    unit={unit}
+                    tone="max"
+                    extreme={row.date === warmestDate ? "Warmest high in this range" : undefined}
+                  />
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <TempCell
+                    value={row.tMin}
+                    unit={unit}
+                    tone="min"
+                    extreme={row.date === coolestDate ? "Coolest low in this range" : undefined}
+                  />
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <TempCell value={row.appMax} unit={unit} tone="muted" />
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <TempCell value={row.appMin} unit={unit} tone="muted" />
+                </td>
+                <td className="py-2.5 pl-3 pr-4 text-right sm:pr-5">
+                  <TempCell value={row.tMean} unit={unit} tone="muted" />
+                </td>
               </tr>
             ))}
           </tbody>

@@ -49,4 +49,28 @@ describe("ObservationsTable", () => {
     const bodyRow = screen.getAllByRole("row")[1];
     expect(within(bodyRow).getAllByText("—").length).toBeGreaterThan(0);
   });
+
+  it("marks the warmest high and coolest low, and nothing else", async () => {
+    const rows: DailyRow[] = [
+      { date: "2024-06-01", tMax: 30, tMin: 20, tMean: 25, appMax: 32, appMin: 18 },
+      { date: "2024-06-02", tMax: 35, tMin: 15, tMean: 25, appMax: 37, appMin: 13 },
+      { date: "2024-06-03", tMax: 28, tMin: 22, tMean: 25, appMax: 30, appMin: 20 },
+    ];
+    render(<ObservationsTable rows={rows} unit="°C" />);
+
+    expect(screen.getByText(/extremes for the range are marked/i)).toBeInTheDocument();
+    expect(await screen.findByText("▲ 35.0")).toBeInTheDocument();
+    expect(await screen.findByText("▼ 15.0")).toBeInTheDocument();
+    // The tied appMax/appMean values are never marked — only High/Low extremes matter.
+    expect(screen.queryByText("▲ 37.0")).not.toBeInTheDocument();
+  });
+
+  it("does not mark extremes for a single-day range", () => {
+    const rows: DailyRow[] = [
+      { date: "2024-06-01", tMax: 30, tMin: 20, tMean: 25, appMax: 32, appMin: 18 },
+    ];
+    render(<ObservationsTable rows={rows} unit="°C" />);
+    expect(screen.queryByText(/extremes for the range are marked/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/▲|▼/)).not.toBeInTheDocument();
+  });
 });

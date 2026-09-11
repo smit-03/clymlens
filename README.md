@@ -9,7 +9,7 @@ Built for the InRisk Labs full-stack case study.
 
 | | Stack | Hosting |
 |---|---|---|
-| **Frontend** | React 18 · TypeScript · Tailwind CSS v4 · Vite · Recharts | Vercel |
+| **Frontend** | React 18 · TypeScript · Tailwind CSS v4 · Vite · Recharts · Leaflet | Vercel |
 | **Backend** | Python 3.12 · FastAPI · httpx · boto3 | AWS Lambda (Function URL) |
 | **Storage** | Amazon S3 — one raw JSON object per fetch | — |
 | **Weather** | Open-Meteo Historical Archive API (public, keyless) | — |
@@ -122,8 +122,8 @@ frontend/
     api/               typed client + service functions
     context/           WorkspaceContext (file list, selection, content, store)
     hooks/useAsync.ts  uniform idle/loading/success/error state
-    lib/               validation, normalization, formatting, stats
-    components/         ui primitives + query / datasets / workspace features
+    lib/               validation, normalization, formatting, stats, geocoding
+    components/         ui primitives + query (search/map/form) / datasets / workspace features
 docs/DESIGN.md         detailed internal design spec (not published)
 ```
 
@@ -391,6 +391,13 @@ NAT, or database).
   of scope for this exercise.
 - The dashboard **parses the object name** for its location/period labels rather than
   fetching every file's content up front.
+- **Location input** is lat/lon (as required), plus two convenience layers on top: a city
+  search and a click-to-pin map. Both call Open-Meteo's free, keyless **geocoding** API
+  directly from the browser — this is an input helper, not the weather-data path, so it
+  doesn't conflict with "work off stored files." A 3D globe picker was considered and
+  rejected: it would add ~600 KB (three.js) for a flashier, not more useful, version of the
+  same "pick a point" interaction; a 2D map (Leaflet, ~45 KB) does the job without the
+  overhead.
 
 ---
 
