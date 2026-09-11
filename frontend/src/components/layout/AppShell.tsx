@@ -5,7 +5,13 @@ import { BrandMark } from "./BrandMark";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  onShowTour,
+}: {
+  children: ReactNode;
+  onShowTour?: () => void;
+}) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/70 backdrop-blur-md">
@@ -43,6 +49,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <ArrowUpRightIcon className="h-3 w-3" />
                 </a>
               </>
+            )}
+            {onShowTour && (
+              <button
+                type="button"
+                onClick={onShowTour}
+                className="inline-flex rounded-md px-1.5 py-1 font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+              >
+                Take a tour
+              </button>
             )}
           </div>
         </div>

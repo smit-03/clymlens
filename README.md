@@ -269,10 +269,12 @@ cd frontend && npm run dev
 
 ### Backend against real AWS S3 instead of the fake
 
-Point `.env` at a private bucket in `ap-south-1` (`S3_BUCKET=clymlens-weather-data-20260910`),
-**clear** `S3_ENDPOINT_URL` and the dummy `AWS_*` keys, and provide credentials for an IAM
+To run locally against real AWS S3 instead of moto, set `ENV=production` and point `.env` at
+a private bucket in `ap-south-1` (`S3_BUCKET=clymlens-weather-data-20260910`), leave
+`S3_ENDPOINT_URL` empty, remove the dummy `AWS_*` keys, and provide credentials for an IAM
 identity allowed to `ListBucket` / `GetObject` / `PutObject` on it (`aws configure` or `AWS_*`
-env vars). Then run `uvicorn` as above.
+env vars). The deployed Lambda uses this same production configuration through the SAM
+template.
 
 The form is pre-filled with a valid Mumbai query — click **Fetch & store** and the dataset
 is fetched from the live Open-Meteo API, stored, and selected for inspection.
@@ -287,9 +289,9 @@ is fetched from the live Open-Meteo API, stored, and selected for inspection.
 |---|---|---|
 | `ENV` | `local` | `local` \| `production` |
 | `AWS_REGION` | `ap-south-1` | injected automatically on Lambda |
-| `S3_BUCKET` | — | required |
+| `S3_BUCKET` | `clymlens-dev` (local) | production must provide the existing bucket name |
 | `S3_PREFIX` | `weather-data/` | |
-| `S3_ENDPOINT_URL` | — | set for a local S3 fake; empty for real AWS |
+| `S3_ENDPOINT_URL` | `http://localhost:5000` (local) | local fake S3 endpoint; production uses real AWS S3 |
 | `OPEN_METEO_BASE_URL` | `https://archive-api.open-meteo.com/v1/archive` | |
 | `HTTP_TIMEOUT_SECONDS` | `10` | |
 | `DEDUP_TTL_MINUTES` | `360` | reuse an object newer than this |

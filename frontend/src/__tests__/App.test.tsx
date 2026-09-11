@@ -35,6 +35,7 @@ const ARCHIVE = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.setItem("clymlens:onboarding-complete:v1", "true");
   api.listWeatherFiles.mockResolvedValue({ files: [] });
   api.storeWeatherData.mockResolvedValue({ status: "ok", file: STORED, cached: false });
   api.getWeatherFileContent.mockResolvedValue(ARCHIVE);

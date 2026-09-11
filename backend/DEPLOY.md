@@ -7,6 +7,11 @@ access), the Function URL, and a log group with 14-day retention.
 The **S3 bucket is not created by the stack** — it is a pre-existing, privately-managed
 bucket passed in by name. This keeps stored data safe from `sam delete`.
 
+The deployed Lambda runs with `ENV=production` and receives its bucket name and other
+production values from the SAM template. It does not use the local moto endpoint or
+local defaults; `S3_BUCKET` is required in production and is supplied by
+`WeatherBucketName`.
+
 ## Prerequisites (one-time)
 
 ### AWS resources

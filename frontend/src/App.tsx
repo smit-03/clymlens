@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import { AppShell } from "./components/layout/AppShell";
 import { CollapsibleSidebar } from "./components/layout/CollapsibleSidebar";
 import { DatasetBrowser } from "./components/datasets/DatasetBrowser";
@@ -9,12 +11,14 @@ import { QueryDraftProvider } from "./context/QueryDraftContext";
 import { SidebarUIProvider, useSidebarUI } from "./context/SidebarUIContext";
 import { ToastProvider } from "./context/ToastContext";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
+import { OnboardingTour } from "./components/onboarding/OnboardingTour";
+import { hasCompletedOnboarding } from "./components/onboarding/onboardingStorage";
 
-function Layout() {
+function Layout({ onShowTour }: { onShowTour: () => void }) {
   const { collapsed } = useSidebarUI();
 
   return (
-    <AppShell>
+    <AppShell onShowTour={onShowTour}>
       {/*
        * Both columns are plain grid items — neither uses `sticky`. A sticky
        * sidebar previously trapped its own content off-screen when the form
@@ -45,12 +49,19 @@ function Layout() {
 }
 
 export default function App() {
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (!hasCompletedOnboarding()) setTourOpen(true);
+  }, []);
+
   return (
     <ToastProvider>
       <QueryDraftProvider>
         <WorkspaceProvider>
           <SidebarUIProvider>
-            <Layout />
+            <Layout onShowTour={() => setTourOpen(true)} />
+            <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
           </SidebarUIProvider>
         </WorkspaceProvider>
       </QueryDraftProvider>

@@ -61,7 +61,7 @@ export function DatasetWorkspace() {
 
   if (!selectedFile) {
     return (
-      <Panel aria-label="Selected dataset">
+      <Panel aria-label="Selected dataset" data-tour-target="chart-table">
         <EmptyState
           icon={<ActivityIcon className="h-5 w-5" />}
           title={files.length === 0 ? "Nothing to inspect yet" : "Select a dataset"}
@@ -112,7 +112,11 @@ export function DatasetWorkspace() {
   const days = parsed ? dayCount(parsed.startDate, parsed.endDate) : normalized.rows.length;
 
   return (
-    <Panel aria-label="Selected dataset" className="overflow-hidden">
+    <Panel
+      aria-label="Selected dataset"
+      data-tour-target="chart-table"
+      className="overflow-hidden"
+    >
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 py-4 sm:px-5">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">{location}</h2>

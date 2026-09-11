@@ -59,7 +59,11 @@ export function MainFetchPanel() {
         title="Fetch weather data"
         description="Search a place and pick a date range to retrieve and store it."
       />
-      <form onSubmit={handleSubmit} className="space-y-4 px-4 py-4 sm:px-5">
+      <form
+        onSubmit={handleSubmit}
+        data-tour-target="location-date"
+        className="space-y-4 px-4 py-4 sm:px-5"
+      >
         <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
           <CitySearch onSelect={setFromPlace} disabled={isSubmitting} />
           <div className="sm:w-72">
@@ -95,7 +99,7 @@ export function MainFetchPanel() {
 
         <div className="flex items-center justify-between gap-3 pt-1">
           <p className="text-[11px] text-slate-400">Up to 31 days per request.</p>
-          <Button type="submit" loading={isSubmitting}>
+          <Button type="submit" loading={isSubmitting} data-tour-target="fetch-store">
             {isSubmitting ? "Fetching…" : "Fetch & store"}
           </Button>
         </div>

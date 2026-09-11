@@ -64,6 +64,16 @@ body {
   border-radius: 4px;
 }
 
+.clymlens-tour-target {
+  position: relative;
+  z-index: 1001;
+  border-radius: 0.75rem;
+  box-shadow:
+    0 0 0 5px rgba(245, 158, 11, 0.22),
+    0 0 18px 5px rgba(245, 158, 11, 0.2),
+    0 0 0 1px #d97706;
+}
+
 @keyframes clymlens-pulse {
   0%,
   100% {

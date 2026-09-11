@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { useWorkspace } from "../../context/WorkspaceContext";
+import { useOptionalSidebarUI } from "../../context/SidebarUIContext";
 import type { FileInfo } from "../../api/types";
 import { formatCoordinates, formatPeriod, parseDatasetName } from "../../lib/datasetName";
 import { formatBytes, formatRelativeTime } from "../../lib/format";
@@ -65,6 +66,7 @@ function DatasetRow({
 
 export function DatasetBrowser() {
   const { files, filesStatus, filesError, refreshFiles, selectedFile, selectFile } = useWorkspace();
+  const sidebarUI = useOptionalSidebarUI();
 
   const countLabel = useMemo(() => {
     if (filesStatus === "loading" && files.length === 0) return "Loading…";
@@ -76,7 +78,7 @@ export function DatasetBrowser() {
   const isError = filesStatus === "error" && files.length === 0;
 
   return (
-    <section aria-label="Stored datasets">
+    <section aria-label="Stored datasets" data-tour-target="stored-datasets">
       <PanelHeader
         title="Datasets"
         description={countLabel}
@@ -133,7 +135,10 @@ export function DatasetBrowser() {
             key={file.name}
             file={file}
             selected={file.name === selectedFile}
-            onSelect={() => selectFile(file.name)}
+            onSelect={() => {
+              selectFile(file.name);
+              sidebarUI?.setCollapsed(true);
+            }}
           />
         ))}
       </div>

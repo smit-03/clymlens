@@ -1,8 +1,8 @@
 """Application configuration.
 
-All settings come from environment variables (or a local ``.env`` file). Nothing
-here has a hard-coded endpoint, bucket, or origin so the same image runs locally
-and on Lambda with only env differences.
+Settings come from environment variables (or a local ``.env`` file). Local
+development has safe defaults for the documented moto workflow; production
+values are supplied through the runtime environment.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     aws_region: str = "ap-south-1"
     s3_bucket: str = Field(default="", description="Target S3 bucket name")
     s3_prefix: str = "weather-data/"
-    # Point at a local S3 (moto / LocalStack / MinIO) for development. Empty = real AWS.
+    # Point at a local S3 (moto / LocalStack / MinIO) for development.
     s3_endpoint_url: str = ""
 
     # --- Open-Meteo ---
@@ -44,6 +44,19 @@ class Settings(BaseSettings):
 
     # --- Logging ---
     log_level: str = "INFO"
+
+    @model_validator(mode="after")
+    def _configure_storage(self) -> Settings:
+        if self.env == "local":
+            # Keep the documented moto-server workflow usable without requiring
+            # developers to copy an ignored .env file before starting the API.
+            if not self.s3_bucket:
+                self.s3_bucket = "clymlens-dev"
+            if not self.s3_endpoint_url:
+                self.s3_endpoint_url = "http://localhost:5000"
+        elif not self.s3_bucket:
+            raise ValueError("S3_BUCKET must be set when ENV=production")
+        return self
 
     @field_validator("s3_prefix")
     @classmethod

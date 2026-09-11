@@ -33,7 +33,7 @@ export function CollapsibleSidebar({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200/80 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(15,23,42,0.12)] backdrop-blur-sm"
+      className="w-full divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200/80 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(15,23,42,0.12)] backdrop-blur-sm"
       style={{ animation: "clymlens-fade-in 220ms ease-out" }}
     >
       {children}

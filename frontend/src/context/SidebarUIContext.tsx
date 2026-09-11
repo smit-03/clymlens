@@ -20,3 +20,7 @@ export function useSidebarUI(): SidebarUIValue {
   if (!value) throw new Error("useSidebarUI must be used within a SidebarUIProvider");
   return value;
 }
+
+export function useOptionalSidebarUI(): SidebarUIValue | null {
+  return useContext(SidebarUIContext);
+}
