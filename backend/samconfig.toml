@@ -14,7 +14,7 @@ region = "ap-south-1"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-parameter_overrides = "WeatherBucketName=\"clymlens-weather-data-20260910\" CorsOrigins=\"http://localhost:5173\" CorsOriginRegex=\"\""
+parameter_overrides = "WeatherBucketName=\"clymlens-weather-data-20260910\" CorsOrigins=\"https://clymlens.vercel.app\" CorsOriginRegex=\"^https://.*clymlens.*\\.vercel\\.app$\""
 
 [default.sync.parameters]
 watch = false
