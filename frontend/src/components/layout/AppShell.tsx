@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 
-import { ArrowUpRightIcon, DatabaseIcon, GlobeIcon } from "../ui/icons";
+import { DatabaseIcon, GlobeIcon } from "../ui/icons";
 import { BrandMark } from "./BrandMark";
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
 export function AppShell({
   children,
@@ -36,20 +34,6 @@ export function AppShell({
               <DatabaseIcon className="h-3.5 w-3.5 text-slate-400" />
               Amazon S3
             </span>
-            {API_BASE && (
-              <>
-                <span className="hidden h-3 w-px bg-slate-200 sm:block" />
-                <a
-                  href={`${API_BASE}/docs`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                >
-                  API
-                  <ArrowUpRightIcon className="h-3 w-3" />
-                </a>
-              </>
-            )}
             {onShowTour && (
               <button
                 type="button"

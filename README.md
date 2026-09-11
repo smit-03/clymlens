@@ -18,7 +18,7 @@ Built for the InRisk Labs full-stack case study.
 
 | | URL | Last verified live |
 |---|---|---|
-| Dashboard | _Vercel deploy pending_ | — |
+| Dashboard | **https://clymlens.vercel.app** | 2026-09-11 |
 | API | `https://vnhkz43xkc4t6mefvzrnbhfyvi0qmwyd.lambda-url.ap-south-1.on.aws` | 2026-09-11 |
 
 Health check: `curl https://vnhkz43xkc4t6mefvzrnbhfyvi0qmwyd.lambda-url.ap-south-1.on.aws/health`
@@ -27,7 +27,18 @@ The backend runs on AWS Lambda (region `ap-south-1`) behind a Lambda Function UR
 and writes S3 **using its IAM execution role — no access keys anywhere**. If the API is cold
 the first request takes ~2–3 s.
 
-> Deployment steps and redeploy instructions: [`backend/DEPLOY.md`](backend/DEPLOY.md).
+Both tiers run on perpetually-free infrastructure (Lambda's free tier never expires; Vercel
+Hobby static hosting doesn't sleep or get torn down), so there's no scheduled downtime to plan
+around — but if a future check ever finds either URL down, redeploy with:
+
+```bash
+# backend (from backend/, once AWS creds are configured — see DEPLOY.md)
+sam build --use-container && sam deploy
+
+# frontend — push to main with VITE_API_BASE_URL set on Vercel; it redeploys on push
+```
+
+> Full deployment steps and redeploy instructions: [`backend/DEPLOY.md`](backend/DEPLOY.md).
 
 ---
 
@@ -120,11 +131,19 @@ backend/
 frontend/
   src/
     api/               typed client + service functions
-    context/           WorkspaceContext (file list, selection, content, store)
-    hooks/useAsync.ts  uniform idle/loading/success/error state
-    lib/               validation, normalization, formatting, stats, geocoding
-    components/         ui primitives + query (search/map/form) / datasets / workspace features
-docs/DESIGN.md         detailed internal design spec (not published)
+    context/           WorkspaceContext (files/selection/content), QueryDraftContext
+                        (shared draft between the main panel and sidebar quick-fetch),
+                        SidebarUIContext (collapse state), ToastContext (toasts)
+    hooks/             useAsync (idle/loading/success/error), useDebouncedValue
+    lib/               validation, normalization, formatting, stats, geocoding, country flags
+    components/
+      layout/          AppShell (top bar), CollapsibleSidebar, BrandMark
+      query/           city search, map picker, coordinate/date fields, main fetch panel
+      datasets/        stored-dataset list
+      workspace/       chart + observations table for the selected dataset
+      onboarding/      first-visit guided tour (localStorage-persisted, replayable)
+      ui/              shared primitives (Button, Panel, Modal, Alert, Tooltip, ...)
+docs/DESIGN.md         detailed internal design spec (git-ignored, not published)
 ```
 
 ---
@@ -289,7 +308,7 @@ is fetched from the live Open-Meteo API, stored, and selected for inspection.
 |---|---|---|
 | `ENV` | `local` | `local` \| `production` |
 | `AWS_REGION` | `ap-south-1` | injected automatically on Lambda |
-| `S3_BUCKET` | `clymlens-dev` (local) | production must provide the existing bucket name |
+| `S3_BUCKET` | `clymlens-dev` (local) | required in production — startup raises `ValueError` if unset, so a missing bucket fails fast and loudly instead of surfacing as a vague runtime storage error |
 | `S3_PREFIX` | `weather-data/` | |
 | `S3_ENDPOINT_URL` | `http://localhost:5000` (local) | local fake S3 endpoint; production uses real AWS S3 |
 | `OPEN_METEO_BASE_URL` | `https://archive-api.open-meteo.com/v1/archive` | |
@@ -330,15 +349,20 @@ CI (`.github/workflows/ci.yml`) runs both suites on every push and pull request.
 
 Full runbook: [`backend/DEPLOY.md`](backend/DEPLOY.md). In short:
 
-1. **Backend** — `cd backend && sam build --use-container && sam deploy --guided`
-   (region `ap-south-1`). The SAM template creates the Lambda, its Function URL, a
-   prefix-scoped IAM execution role, and a log group with 14-day retention. The S3 bucket is
-   pre-existing and passed in by name (`WeatherBucketName`) so `sam delete` never touches
-   stored data. Note the `FunctionUrl` output.
+1. **Backend (first time only)** — `cd backend && sam build --use-container && sam deploy --guided`
+   (region `ap-south-1`, stack name `clymlens`, prompts for `WeatherBucketName`). The SAM
+   template creates the Lambda, its Function URL, a prefix-scoped IAM execution role, and a
+   log group with 14-day retention. The S3 bucket is pre-existing and passed in by name so
+   `sam delete` never touches stored data. `--guided` writes the answers into
+   `samconfig.toml` (committed), so note the `FunctionUrl` output.
 2. **Frontend** — import the repo on Vercel, root directory `frontend`, set
    `VITE_API_BASE_URL` to the Function URL, deploy. Note the `*.vercel.app` URL.
 3. **CORS** — redeploy the backend with `CorsOrigins` set to the Vercel URL.
 4. **Verify** — `curl <FunctionUrl>/health`, then run the full flow from the live dashboard.
+5. **Later redeploys** — `samconfig.toml` already has every parameter, so a code change just
+   needs `sam build --use-container && sam deploy` (no `--guided`) for the backend, or a push
+   to `main` for the frontend (Vercel redeploys automatically on push, if the GitHub
+   integration is connected).
 
 ---
 

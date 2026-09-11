@@ -84,12 +84,6 @@ export const RefreshIcon = (p: SVGProps<SVGSVGElement>) => (
   </Base>
 );
 
-export const ArrowUpRightIcon = (p: SVGProps<SVGSVGElement>) => (
-  <Base {...p}>
-    <path d="M7 17 17 7M8 7h9v9" />
-  </Base>
-);
-
 export const ChevronLeftIcon = (p: SVGProps<SVGSVGElement>) => (
   <Base {...p}>
     <path d="m15 6-6 6 6 6" />
